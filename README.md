@@ -5,7 +5,7 @@ Steps I take when setting up a VPN server on Digital Ocean
 * [Create SSH keys on client computer](#create-keys)
 * [Login after creating droplet](#new-login)
 * [Disable root login and change SSH port](#disable-root)
-* [Enbale UFW](#enable-ufw)
+* [Enable UFW](#enable-ufw)
 * [Install OpenVPN](#install-ovpn)
 * [Install Libreswan](#install-libreswan)
 * [Install Dnsmasq](#dnsmasq)
