@@ -2,7 +2,7 @@
 Steps I take when setting up a VPN server on Digital Ocean
 
 ##Table of Contents
-* [Create SSH Keys on client computer](#create-keys)
+* [Create SSH keys on client computer](#create-keys)
 * [Login after creating droplet](#new-login)
 * [Disable root login and change SSH port](#disable-root)
 * [Enbale UFW](#enable-ufw)
@@ -11,14 +11,14 @@ Steps I take when setting up a VPN server on Digital Ocean
 * [Install Dnsmasq](#dnsmasq)
 * [Install NTP](#ntp)
 * [Install send only SSMTP service](#ssmtp)
-* [Enable Automatic Upgrades](#upgrades)
-* [Setup fail2ban](#fail2ban)
-* [Configure Tripwire](#tripwire)
+* [Install Fail2ban](#fail2ban)
+* [Install Tripwire](#tripwire)
+* [Enable Automatic upgrades](#upgrades)
 * [Autostart OpenVPN on Debian client computer](#autostart)
 * [Allow multiple clients to connect with same ovpn file](#multiple-clients)
-* [Maintenance Commands](#misc)
+* [Maintenance commands](#misc)
 
-### <a name="create-keys"></a>Create SSH Keys on client computer
+### <a name="create-keys"></a>Create SSH keys on client computer
 
 Check for existing SSH keys
 
@@ -60,13 +60,15 @@ Give root privileges
 gpasswd -a demo sudo
 ```
 
-Add public key authentication for new user
+Add public key authentication for new user using client computer. Call new public key `id_rsa_demo`
 
 ```bash
 ssh-keygen -t rsa -b 4096 -C your_email@example.com
 ```
 
-Manually install key. Copy public key by `CTRL-C` or `(cat ~/.ssh/id_rsa.pub)`
+Copy contents of public key by `CTRL-C` or `(cat ~/.ssh/id_rsa_demo.pub)`
+
+Manually install public key on server
 
 ```bash
 su - demo
@@ -120,7 +122,7 @@ sudo nano /etc/default/ufw
 DEFAULT_FORWARD_POLICY="ACCEPT"
 ```
 
-Add these lines to the before.rules file
+Add these lines to the `before.rules` file
 
 ```bash
 sudo nano /etc/ufw/before.rules
@@ -165,7 +167,7 @@ UFW rules should look similar to this
 wget git.io/vpn --no-check-certificate -O openvpn-install.sh && bash openvpn-install.sh
 ```
 
-Copy unified .ovpn to client computer
+Copy unified `.ovpn` to client computer
 
 ```bash
 scp -P root@server_ip_address:client.ovpn Downloads/
@@ -203,17 +205,13 @@ sudo iptables -I FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
 sudo service ufw stop
 sudo service ufw start
 sudo /etc/init.d/openvpn restart
-```
 
-Enable Iptables persistence so above commands should no longer be needed
-
-```bash
 sudo iptables-save > /etc/iptables.rules
 ```
 
-Insert these lines in /etc/rc.local:
-
 ```bash
+sudo nano /etc/rc.local
+
 iptables-restore < /etc/iptables.rules
 ```
 
@@ -235,13 +233,13 @@ cat /etc/resolv.conf
 Take note of query time
 
 ```bash
-dig digitalocean.com @localhost
+dig duckduckgo.com @localhost
 ```
 
 Check again after cached
 
 ```bash
-dig digitalocean.com @localhost
+dig duckduckgo.com @localhost
 ```
 
 ### <a name="ntp"></a>Install NTP
@@ -285,38 +283,19 @@ Test ssmtp in terminal
 ssmtp recipient_email@example.com
 ```
 
-Format message as below:
+Format message as below
+
 ```bash
 To: recipient_email@example.com
 From: myemailaddress@gmail.com
 Subject: test email
 
-hello world!
+test email
 ```
 
-Note the blank line after the subject, everything after this line is the body of the email. When you're finished, press Ctrl-D. sSMTP may take a few seconds to send the message before closing.
+Insert blank line after `Subject:`. This is the body of the email. Press `CTRL-D` to send message. Sometimes pressing `CTRL-D` a second time after about 10 seconds is needed if message is not sent.
 
-### <a name="upgrades"></a>Enable Automatic Upgrades
-
-```bash
-sudo apt-get install unattended-upgrades
-sudo dpkg-reconfigure unattended-upgrades
-```
-
-Update the 10 periodic file. "1" means that it will upgrade every day
-
-```bash
-/etc/apt/apt.conf.d/10periodic
-```
-
-```bash
-APT::Periodic::Update-Package-Lists "1";
-APT::Periodic::Download-Upgradeable-Packages "1";
-APT::Periodic::AutocleanInterval "7";
-APT::Periodic::Unattended-Upgrade "1";
-```
-
-### <a name="fail2ban"></a>Setup fail2ban
+### <a name="fail2ban"></a>Install Fail2ban
 
 ```bash
 sudo apt-get install fail2ban
@@ -326,15 +305,11 @@ sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
 ```bash
 sudo nano /etc/fail2ban/jail.local
 
-# "ignoreip" can be an IP address, a CIDR mask or a DNS host
+# "ignoreip" can be an IP address, a CIDR mask or a DNS host. Use space separator to add more than one IP
 ignoreip = 127.0.0.⅛
 bantime  = 600
 maxretry = 3
-```
 
-Setup ssmtp settings with following settings
-
-```bash
 destemail = your_email@example.com
 sendername = Fail2Ban
 mta = sendmail
@@ -342,7 +317,7 @@ mta = sendmail
 action = %(action_mwl)s
 ```
 
-Jails we can initially set to true without any errors
+Jails which can be initially set to true without any errors
 
 ```bash
 #ssh
@@ -356,14 +331,14 @@ Jails we can initially set to true without any errors
 #dovecot
 ```
 
-Restart fail2ban
+Restart Fail2ban
 
 ```bash
 sudo service fail2ban stop
 sudo service fail2ban start
 ```
 
-Check list of banned IP for fail2ban
+Check list of banned IPs for Fail2ban
 
 ```bash
 fail2ban-client status ssh
@@ -378,7 +353,7 @@ Using the -aAX set of options, all attributes are preserved
 rsync -aAXv --exclude={"/dev/*","/proc/*","/sys/*","/tmp/*","/run/*","/mnt/*","/media/*","/lost+found"} root@your_hostname:/ /home/demo/backup/
 ```
 
-### <a name="tripwire"></a>Configure TripWire
+### <a name="tripwire"></a>Install TripWire
 
 ```bash
 #https://www.digitalocean.com/community/tutorials/how-to-use-tripwire-to-detect-server-intrusions-on-an-ubuntu-vps
@@ -388,7 +363,7 @@ rsync -aAXv --exclude={"/dev/*","/proc/*","/sys/*","/tmp/*","/run/*","/mnt/*","/
 sudo apt-get install tripwire
 ```
 
-Set the Site-Key passphrase and the Local-Key passphrase
+Set the `Site-Key` and `Local-Key` passphrase
 
 Create policy file
 
@@ -403,7 +378,7 @@ sudo tripwire --init
 sudo sh -c 'tripwire --check | grep Filename > /etc/tripwire/test_results'
 ```
 
-Entries may look like this:
+Entries may look like this
 
 ```bash
 less /etc/tripwire/test_results
@@ -445,7 +420,7 @@ Edit text policy in editor
 sudo nano /etc/tripwire/twpol.txt
 ```
 
-Search for each of the files that were returned in the test_results file. Comment out lines that match.
+Search for each of the files that were returned in the `test_results` file. Comment out lines that match.
 
 ```bash
     {
@@ -458,7 +433,7 @@ Search for each of the files that were returned in the test_results file. Commen
         . . .
 ```
 
-Comment out /var/run and /var/lock lines so that system does not flag normal filesystem changes by services:
+Comment out `/var/run` and `/var/lock` lines
 
 ```bash
     (
@@ -474,27 +449,27 @@ Comment out /var/run and /var/lock lines so that system does not flag normal fil
 
 Save and close
 
-Implement by re-creating encrypted policy file that tripwire reads
+Re-create encrypted policy file
 
 ```bash
 sudo twadmin -m P /etc/tripwire/twpol.txt
 ```
 
-Reinitialize the database to implement policy
+Re-initialize database
 
 ```bash
 sudo tripwire --init
 ```
 
-Warnings should be gone. If there are still warnings, continue editing /etc/tripwire/twpol.txt file until gone.
+Warnings should be gone. If there are still warnings, continue editing `/etc/tripwire/twpol.txt` file until gone.
 
-The basic syntax for a check is
+Check current status of warnings
 
 ```bash
 sudo tripwire --check
 ```
 
-Delete the test_results file that we created
+Delete `test_results` file that was just created
 
 ```bash 
 sudo rm /etc/tripwire/test_results
@@ -537,32 +512,50 @@ Check report that was sent with the email
 sudo tripwire --check --interactive
 ```
 
-Remove “x” from box if not ok with change
+Remove `x` from box if not ok with change. Re-run above command to reset warning after each email received
 
 Automate Tripwire with Cron
 
-Check to see if root already has a crontab by issuing this command:
+Check if root already has crontab by issuing this command
 
 ```bash
 sudo crontab -l
 ```
 
-If a crontab is present, you should pipe it into a file to back it up:
+If crontab is present, pipe into file to back it up
 
 ```bash
 sudo sh -c 'crontab -l > crontab.bad'
 ```
 
-Afterwards, we can edit the crontab by typing:
+Edit crontab
 
 ```bash
 sudo crontab -e
 ```
 
-To have tripwire run at 3:30am every day, we can place a line like this in our file:
+To have tripwire run at 3:30am every day, insert this line
 
 ```bash
 30 3 * * * /usr/sbin/tripwire --check | mail -s "Tripwire report for `uname -n`" your_email@example.com
+```
+
+### <a name="upgrades"></a>Enable Automatic Upgrades
+
+```bash
+sudo apt-get install unattended-upgrades
+sudo dpkg-reconfigure unattended-upgrades
+```
+
+Update the 10 periodic file. `1` means that it will upgrade every day
+
+```bash
+sudo nano /etc/apt/apt.conf.d/10periodic
+
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Download-Upgradeable-Packages "1";
+APT::Periodic::AutocleanInterval "1";
+APT::Periodic::Unattended-Upgrade "1";
 ```
 
 ### <a name="autostart"></a>Autostart OpenVPN on Debian client computer
@@ -577,7 +570,7 @@ Uncomment:
 AUTOSTART=all
 ```
 
-Copy client.ovpn to /etc/openvpn/client.conf by renaming file
+Copy `client.ovp`n to `/etc/openvpn/client.conf` by renaming file
 
 ```bash
 gksu -w -u root gksu thunar
@@ -589,7 +582,7 @@ Reload openvpn configuration
 /etc/init.d/openvpn reload /etc/openvpn/client.conf
 ```
 
-Check for tun0 interface
+Check for `tun0` interface
 
 ```bash
 ifconfig
@@ -617,161 +610,94 @@ sudo service openvpn restart
 
 ### <a name="misc"></a>Maintenance Commands
 
-Programs holding an open network socket
-
 ```bash
+#Programs holding open network socket
 lsof -i
-```
 
-Show all running processes
-
-```bash
+#Show all running processes
 ps -ef
-```
 
-Who is logged on
-
-```bash
+#Who is logged on
 who -u
-```
 
-Kill the process that you want
-
-```bash
+#Kill the process that you want
 kill "pid"
-```
 
-Check SSH sessions
-
-```bash
+#Check SSH sessions
 ps aux | egrep "sshd: [a-zA-Z]+@"
-```
 
-Check SSHD
-
-```bash    
+#Check SSHD
 ps fax
-```
 
-Check last logins
-
-```bash
+#Check last logins
 last
-```
 
-Check ufw status
-
-```bash
+#Check ufw status
 sudo ufw status verbose
-```
 
-Delete ufw rules
-
-```bash
+#Delete ufw rules
 sudo ufw delete deny "port"
-```
 
-Check logs
-
-```bash
+#Check logs
 grep -ir ssh /var/log/* 
 grep -ir sshd /var/log/* 
 grep -ir breakin /var/log/* 
 grep -ir security /var/log/*
-```
 
-Tree directory 
-
-```bash
+#Tree directory 
 http://www.cyberciti.biz/faq/linux-show-directory-structure-command-line/
-```
 
-See all files
-
-```bash
+#See all files
 tree -a
-```
 
-List directories only
-
-```bash
+#List directories only
 tree -d
-```
-Colorized output
 
-```bash    
+#Colorized output
 tree -C
-```
 
-File management
-
-```bash
+#File management
 https://www.digitalocean.com/community/tutorials/basic-linux-navigation-and-file-management
 http://www.computerworld.com/article/2598082/linux/linux-linux-command-line-cheat-sheet.html
 http://www.debian-tutorials.com/beginners-how-to-navigate-the-linux-filesystem
-```
 
-LSOF Commands
-
-```bash
+#LSOF Commands
 https://stackoverflow.com/questions/106234/lsof-survival-guide
-```
 
-How to kill zombie process
-
-```bash
+#How to kill zombie process
 ps aux | grep 'Z'
-```
 
-Find the parent PID of the zombie
-
-```bash
+#Find the parent PID of the zombie
 pstree -p -s 93572
-```
 
-Check IPTables traffic
-
-```bash
+#Check IPTables traffic
 sudo iptables -v -x -n -L
-```
-Report file system disk space
 
-```bash
+#Report file system disk space
 df -Th
-```
 
-Check trash size
-
-```bash
+#Check trash size
 sudo find / -type d -name '*Trash*' | sudo xargs du -h | sort
-```
 
-Check size of packages in apt
-
-```bash
+#Check size of packages in apt
 du -h /var/cache/apt/
-```
 
-Check size of log files
-
-```bash
+#Check size of log files
 sudo du -h /var/log
-```
 
-Check size of lost+found folder
-
-```bash
+#Check size of lost+found folder
 sudo find / -name "lost+found" | sudo xargs du -h
-```
 
-How to delete lots of text in nano
-
-```bash
+#How to delete lots of text in nano
 Scroll to top of text, press Alt+A, Ctrl-V to bottom of text, press Ctrl-K to cut the text, Ctrl-O to save, Ctrl-X to exit
-```
 
-How to scan top 8000 ports using nmap
-
-```bash
+#How to scan top 8000 ports using nmap
 nmap -vv --top-ports 8000 your_hostname
+
+#Delete ufw and iptable rules by line number. In this example we use number 666
+sudo ufw status numbered
+sudo ufw delete 666
+
+sudo iptables -L --line-numbers
+sudo iptables -D INPUT 666
 ```
