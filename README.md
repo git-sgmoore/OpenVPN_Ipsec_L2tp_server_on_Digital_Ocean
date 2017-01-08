@@ -164,7 +164,7 @@ UFW rules should look similar to this
 ```
 
 ```bash    
-wget git.io/vpn --no-check-certificate -O openvpn-install.sh && bash openvpn-install.sh
+wget git.io/vpn -O openvpn-install.sh && bash openvpn-install.sh
 ```
 
 Copy unified `.ovpn` to client computer
