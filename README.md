@@ -1,7 +1,7 @@
 # OpenVPN and Ipsec L2tp server
 Steps I take when setting up a VPN server on Digital Ocean
 
-##Table of Contents
+## Table of Contents
 * [Create SSH keys on client computer](#create-keys)
 * [Login after creating droplet](#new-login)
 * [Disable root login and change SSH port](#disable-root)
@@ -92,7 +92,7 @@ exit
 
 Login as new user
 
-###<a name="disable-root"></a>Disable root login and change SSH port
+### <a name="disable-root"></a>Disable root login and change SSH port
 
 It is possible to change SSH port to anything you like as long as it doesn't conflict with other active ports. Port 22 is written below, but any port can be used. **Allow new port in ufw rules below and restart ufw before restarting ssh**
 
@@ -345,7 +345,7 @@ fail2ban-client status ssh
 iptables --list -n | fgrep DROP
 ```
 
-###Full system backup using rsync.
+### Full system backup using rsync.
 
 Using the -aAX set of options, all attributes are preserved
 
