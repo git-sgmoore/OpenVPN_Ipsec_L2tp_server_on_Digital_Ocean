@@ -94,7 +94,7 @@ Login as new user
 
 ### <a name="disable-root"></a>Disable root login and change SSH port
 
-It is possible to change SSH port to anything you like as long as it doesn't conflict with other active ports. Port 22 is written below, but any port can be used. **Allow new port in ufw rules below and restart ufw before restarting ssh**
+You can change the SSH port to any value that doesn't conflict with other active ports. Although Port 22 is used in the example below, you can choose a different port. Update the UFW rules to allow the new port and restart UFW before restarting SSH.
 
 ```bash
 sudo nano /etc/ssh/sshd_config
@@ -175,6 +175,8 @@ scp -P root@server_ip_address:client.ovpn Downloads/
 
 ### <a name="install-libreswan"></a>Install Libreswan
 
+Libreswan is an implementation of IPsec (Internet Protocol Security) and IKE (Internet Key Exchange) for Linux. It's used to create secure VPN connections.
+
 ```bash
 #https://blog.ls20.com/ipsec-l2tp-vpn-auto-setup-for-ubuntu-12-04-on-amazon-ec2/
 #https://github.com/hwdsl2/setup-ipsec-vpn
@@ -217,6 +219,8 @@ iptables-restore < /etc/iptables.rules
 
 ### <a name="dnsmasq"></a>Install Dnsmasq
 
+Dnsmasq is a lightweight DNS (Domain Name System) forwarder and DHCP (Dynamic Host Configuration Protocol) server. It's used to resolve hostnames and manage IP addresses.
+
 Check current nameserver configuration
 
 ```bash
@@ -255,6 +259,8 @@ sudo service ntp start
 ```
 
 ### <a name="ssmtp"></a>Install send only SSMTP service
+
+SSMTP send-only command-line tool that allows sending emails from the Linux command line. SMTP stands for Simple Mail Transfer Protocol.
 
 ```bash
 sudo apt-get install ssmtp
@@ -296,6 +302,8 @@ test email
 Insert blank line after `Subject:`. This is the body of the email. Press `CTRL-D` to send message. Sometimes pressing `CTRL-D` a second time after about 10 seconds is needed if message is not sent.
 
 ### <a name="fail2ban"></a>Install Fail2ban
+
+Fail2ban is a log-parsing tool that protects against brute-force attacks. It monitors log files for failed login attempts and can ban IPs that show malicious signs.
 
 ```bash
 sudo apt-get install fail2ban
@@ -354,6 +362,8 @@ rsync -aAXv --exclude={"/dev/*","/proc/*","/sys/*","/tmp/*","/run/*","/mnt/*","/
 ```
 
 ### <a name="tripwire"></a>Install TripWire
+
+Tripwire is an intrusion detection system that monitors file integrity. It checks for unauthorized changes to critical system files and can alert administrators.
 
 ```bash
 #https://www.digitalocean.com/community/tutorials/how-to-use-tripwire-to-detect-server-intrusions-on-an-ubuntu-vps
@@ -590,7 +600,7 @@ ifconfig
 
 ### <a name="multiple-clients"></a>Allow multiple clients to connect with same ovpn file
 
-Note: It is safer to create multiple ovpn files
+Note: While it's possible to allow multiple clients to connect with the same ovpn file, it's generally safer to create individual ovpn files for each client.
 
 ```bash
 sudo nano /etc/openvpn/server.conf
